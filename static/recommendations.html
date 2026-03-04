@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rekomendasi Kafe Serupa</title>
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F5F0E8;
+      --brown-dark: #2C1810;
+      --brown-mid: #6B3E26;
+      --brown-light: #C4956A;
+      --accent: #E8A87C;
+      --green: #4A7C59;
+      --white: #FEFCF8;
+    }
+
+    body {
+      background-color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 15% 40%, rgba(196,149,106,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 60%, rgba(74,124,89,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--brown-mid), var(--brown-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header-title {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      color: var(--brown-dark);
+      font-weight: 700;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      color: var(--brown-light);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-outline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border: 1.5px solid rgba(196,149,106,0.4);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--brown-mid);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .btn-outline svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-outline:hover {
+      background: var(--cream);
+      border-color: var(--brown-light);
+    }
+
+    /* ── INFO KAFE ASAL ── */
+    .origin-card {
+      background: linear-gradient(135deg, rgba(107,62,38,0.06), rgba(196,149,106,0.08));
+      border: 1px solid rgba(196,149,106,0.25);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeIn 0.5s ease 0.1s both;
+    }
+
+    .origin-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .origin-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brown-light);
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    .origin-name {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      color: var(--brown-dark);
+      font-weight: 700;
+    }
+
+    .origin-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .tag {
+      font-size: 11px;
+      background: rgba(107,62,38,0.1);
+      color: var(--brown-mid);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-weight: 500;
+    }
+
+    /* ── LOADING ── */
+    .loading-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 60px 24px;
+      text-align: center;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(196,149,106,0.2);
+      border-top-color: var(--brown-mid);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      color: var(--brown-dark);
+      margin-bottom: 8px;
+    }
+
+    .loading-sub { font-size: 13px; color: var(--brown-light); }
+
+    /* ── CAFE CARDS ── */
+    .cafe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .cafe-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: 0 2px 16px rgba(44,24,16,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.25s;
+      animation: fadeIn 0.4s ease both;
+      border: 1.5px solid transparent;
+    }
+
+    .cafe-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(44,24,16,0.12);
+      border-color: rgba(196,149,106,0.3);
+    }
+
+    .cafe-card:nth-child(1) { animation-delay: 0.15s; }
+    .cafe-card:nth-child(2) { animation-delay: 0.22s; }
+    .cafe-card:nth-child(3) { animation-delay: 0.29s; }
+    .cafe-card:nth-child(4) { animation-delay: 0.36s; }
+
+    .cafe-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cafe-rank {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      color: var(--brown-light);
+      font-weight: 700;
+      min-width: 28px;
+      line-height: 1.2;
+    }
+
+    .cafe-info { flex: 1; min-width: 0; }
+
+    .cafe-name {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      color: var(--brown-dark);
+      font-weight: 700;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cafe-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .cafe-distance {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--brown-light);
+    }
+
+    .cafe-distance svg {
+      width: 13px;
+      height: 13px;
+      stroke: var(--brown-light);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Tombol Cek Ulasan Asli */
+    .btn-cek {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 20px;
+      background: linear-gradient(135deg, var(--brown-mid), var(--brown-dark));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-cek svg {
+      width: 14px;
+      height: 14px;
+      stroke: white;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-cek:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(44,24,16,0.25);
+    }
+
+    .btn-cek:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Empty state */
+    .empty-state {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 60px 24px;
+      text-align: center;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+      color: var(--brown-light);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--brown-light);
+      fill: none;
+      stroke-width: 1.5;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state p { font-size: 14px; }
+
+    @media (max-width: 560px) {
+      .cafe-card { flex-direction: column; align-items: flex-start; }
+      .btn-cek { width: 100%; justify-content: center; }
+      .header-sub { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+          <line x1="6" y1="1" x2="6" y2="4"/>
+          <line x1="10" y1="1" x2="10" y2="4"/>
+          <line x1="14" y1="1" x2="14" y2="4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Rekomendasi Kafe Alternatif</div>
+        <div class="header-sub">Kafe terverifikasi dengan ulasan asli di sekitar Anda</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-outline" onclick="window.location.href='/results.html'">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Kembali
+      </button>
+      <button class="btn-outline" onclick="window.location.href='/'">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Cari Lagi
+      </button>
+    </div>
+  </div>
+
+  <!-- Info kafe asal -->
+  <div class="origin-card" id="originCard">
+    <div class="origin-icon">☕</div>
+    <div>
+      <div class="origin-label">Berdasarkan kafe yang kamu cari</div>
+      <div class="origin-name" id="originName">Memuat...</div>
+      <div class="origin-tags" id="originTags"></div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingCard" class="loading-card">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Mencari rekomendasi...</div>
+    <div class="loading-sub">Mencocokkan kafe dengan kategori serupa di sekitarmu</div>
+  </div>
+
+  <!-- Daftar rekomendasi -->
+  <div id="cafeList" class="cafe-list" style="display:none;"></div>
+
+</div>
+
+<script>
+  // ============================================================
+  // Render tag
+  function renderTags(tags) {
+    return tags.map(t => `<span class="tag">${t}</span>`).join('');
+  }
+
+  // Tombol "Cek Ulasan Asli" diklik → analisis kafe baru → ke results.html
+  async function cekUlasan(btn, cafeUrl, cafeName) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2;animation:spin 0.7s linear infinite">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+      Memuat...`;
+
+    try {
+      const response = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: cafeUrl })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || 'Gagal menganalisis kafe');
+      }
+
+      const data = await response.json();
+
+      // Tandai bahwa results datang dari halaman rekomendasi
+      sessionStorage.setItem('cafeUrl', cafeUrl);
+      sessionStorage.setItem('analyzeResult', JSON.stringify(data));
+      sessionStorage.setItem('resultFrom', 'recommendations');
+
+      window.location.href = '/results.html';
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = `✗ ${err.message}`;
+      btn.style.background = '#c0392b';
+    }
+  }
+
+  // ============================================================
+  // Render semua kartu rekomendasi
+  function renderRecommendations(data) {
+    const list = document.getElementById('cafeList');
+
+    if (!data || data.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Tidak ada rekomendasi kafe ditemukan di sekitarmu.</p>
+        </div>`;
+      list.style.display = 'block';
+      return;
+    }
+
+    list.innerHTML = data.map((cafe, i) => `
+      <div class="cafe-card">
+        <div class="cafe-left">
+          <div class="cafe-rank">${i + 1}</div>
+          <div class="cafe-info">
+            <div class="cafe-name">${cafe.name}</div>
+            <div class="cafe-tags">${renderTags(cafe.tags)}</div>
+            <div class="cafe-distance">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${cafe.distance}
+            </div>
+          </div>
+        </div>
+        <button class="btn-cek" onclick="cekUlasan(this, '${cafe.url}', '${cafe.name}')">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Cek Ulasan Asli
+        </button>
+      </div>
+    `).join('');
+
+    list.style.display = 'flex';
+  }
+
+  // ============================================================
+  // Load data dari backend FastAPI
+  // ============================================================
+  async function loadData() {
+    const cafeUrl = sessionStorage.getItem('cafeUrl');
+    const analyzeResult = sessionStorage.getItem('analyzeResult');
+
+    // Kalau tidak ada data, redirect ke halaman utama
+    if (!cafeUrl) {
+      window.location.href = '/';
+      return;
+    }
+
+    // Isi info kafe asal dari hasil analyze sebelumnya
+    if (analyzeResult) {
+      const data = JSON.parse(analyzeResult);
+      document.getElementById('originName').textContent = data.cafe_name || 'Kafe';
+      // Tags akan diisi setelah dapat data dari /recommend
+    }
+
+    try {
+      // Minta rekomendasi ke backend
+      const response = await fetch('/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cafe_url: cafeUrl })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || 'Gagal mendapat rekomendasi');
+      }
+
+      const data = await response.json();
+
+      // Sembunyikan loading
+      document.getElementById('loadingCard').style.display = 'none';
+
+      // Tampilkan rekomendasi
+      renderRecommendations(data.recommendations);
+
+    } catch (err) {
+      document.getElementById('loadingCard').style.display = 'none';
+      document.getElementById('cafeList').style.display = 'flex';
+      document.getElementById('cafeList').innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>⚠ ${err.message}</p>
+        </div>`;
+    }
+  }
+
+  // Reset tombol yang stuck loading saat user kembali ke halaman ini
+  window.addEventListener('pageshow', function() {
+    document.querySelectorAll('.btn-cek').forEach(btn => {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+        Cek Ulasan Asli`;
+      btn.style.background = '';
+    });
+  });
+
+  // Tambahkan keyframe spin untuk ikon loading tombol
+  const style = document.createElement('style');
+  style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
+
+  loadData();
+</script>
+
+</body>
+</html>

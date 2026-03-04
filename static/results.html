@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hasil Analisis Ulasan</title>
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F5F0E8;
+      --brown-dark: #2C1810;
+      --brown-mid: #6B3E26;
+      --brown-light: #C4956A;
+      --accent: #E8A87C;
+      --green: #4A7C59;
+      --green-light: #EBF3EE;
+      --red: #C0392B;
+      --red-light: #FDECEA;
+      --white: #FEFCF8;
+    }
+
+    body {
+      background-color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 32px 16px 100px;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 10% 30%, rgba(196,149,106,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 70%, rgba(74,124,89,0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--brown-mid), var(--brown-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header-title {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      color: var(--brown-dark);
+      font-weight: 700;
+    }
+
+    .header-cafe {
+      font-size: 13px;
+      color: var(--brown-light);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border: 1.5px solid rgba(196,149,106,0.4);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--brown-mid);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .btn-back svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-back:hover {
+      background: var(--cream);
+      border-color: var(--brown-light);
+    }
+
+    /* ── LOADING STATE ── */
+    .loading-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 60px 24px;
+      text-align: center;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+      margin-bottom: 20px;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(196,149,106,0.2);
+      border-top-color: var(--brown-mid);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      color: var(--brown-dark);
+      margin-bottom: 8px;
+    }
+
+    .loading-sub {
+      font-size: 13px;
+      color: var(--brown-light);
+    }
+
+    /* ── STATS CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 16px rgba(44,24,16,0.07);
+      animation: fadeIn 0.5s ease both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--brown-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-label svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .stat-label.green { color: var(--green); }
+    .stat-label.red { color: var(--red); }
+
+    .stat-number {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      color: var(--brown-dark);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-number.green { color: var(--green); }
+    .stat-number.red { color: var(--red); }
+
+    .stat-pct {
+      font-size: 13px;
+      color: var(--brown-light);
+      margin-top: 4px;
+    }
+
+    /* ── REVIEW TABLE ── */
+    .reviews-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 2px 20px rgba(44,24,16,0.08);
+      margin-bottom: 20px;
+      animation: fadeIn 0.5s ease 0.35s both;
+    }
+
+    .reviews-card-title {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      color: var(--brown-dark);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reviews-card-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: var(--brown-light);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(196,149,106,0.3);
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--brown-mid);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--brown-mid);
+      color: white;
+      border-color: var(--brown-mid);
+    }
+
+    /* Review list */
+    .review-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .review-item {
+      border: 1px solid rgba(196,149,106,0.15);
+      border-radius: 12px;
+      padding: 16px 18px;
+      transition: all 0.2s;
+      animation: fadeIn 0.4s ease both;
+    }
+
+    .review-item:hover {
+      border-color: rgba(196,149,106,0.4);
+      background: var(--cream);
+    }
+
+    .review-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .reviewer-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .reviewer-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--brown-light), var(--accent));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-size: 14px;
+      color: white;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .reviewer-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--brown-dark);
+    }
+
+    .reviewer-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+    }
+
+    .stars { display: flex; gap: 2px; }
+    .star {
+      width: 13px;
+      height: 13px;
+      fill: #F4A726;
+    }
+    .star.empty { fill: #DDD; }
+
+    .review-date {
+      font-size: 11px;
+      color: var(--brown-light);
+    }
+
+    .badge-guide {
+      font-size: 10px;
+      background: rgba(74,124,89,0.1);
+      color: var(--green);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-weight: 500;
+    }
+
+    .review-text {
+      font-size: 13.5px;
+      color: #4a3728;
+      line-height: 1.6;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--brown-light);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--brown-light);
+      fill: none;
+      stroke-width: 1.5;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* ── FLOATING REKOMENDASI BUTTON ── */
+    .btn-rekomendasi {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 40px;
+      background: linear-gradient(135deg, var(--brown-light), var(--brown-mid));
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: box-shadow 0.25s, transform 0.25s;
+      letter-spacing: 0.02em;
+      z-index: 999;
+      box-shadow: 0 8px 32px rgba(107,62,38,0.35);
+      white-space: nowrap;
+    }
+
+    .btn-rekomendasi:hover {
+      transform: translateX(-50%) translateY(-3px);
+      box-shadow: 0 12px 36px rgba(107,62,38,0.45);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .header-cafe { display: none; }
+      .stat-number { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+          <line x1="6" y1="1" x2="6" y2="4"/>
+          <line x1="10" y1="1" x2="10" y2="4"/>
+          <line x1="14" y1="1" x2="14" y2="4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Hasil Analisis Ulasan</div>
+        <div class="header-cafe" id="cafeName">Memuat nama kafe...</div>
+      </div>
+    </div>
+    <button class="btn-back" onclick="history.back()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Kembali
+    </button>
+  </div>
+
+  <!-- Loading State (tampil saat data sedang diproses) -->
+  <div class="loading-card" id="loadingCard">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Menganalisis ulasan...</div>
+    <div class="loading-sub">Sistem sedang memproses dan mendeteksi ulasan palsu</div>
+  </div>
+
+  <!-- Hasil (tersembunyi dulu, muncul setelah data siap) -->
+  <div id="resultContent" style="display:none;">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Total Ulasan
+        </div>
+        <div class="stat-number" id="totalCount">—</div>
+        <div class="stat-pct">ulasan ditemukan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label green">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Ulasan Asli
+        </div>
+        <div class="stat-number green" id="genuineCount">—</div>
+        <div class="stat-pct" id="genuinePct">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label red">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Ulasan Palsu
+        </div>
+        <div class="stat-number red" id="fakeCount">—</div>
+        <div class="stat-pct" id="fakePct">—</div>
+      </div>
+    </div>
+
+    <!-- Review List -->
+    <div class="reviews-card">
+      <div class="reviews-card-title">Ulasan Asli Terverifikasi</div>
+
+      <!-- Filter -->
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterReviews('semua', this)">Semua</button>
+        <button class="filter-btn" onclick="filterReviews('local_guide', this)">🏅 Local Guide</button>
+      </div>
+
+      <div class="review-list" id="reviewList">
+        <!-- Review items akan diisi oleh JavaScript -->
+      </div>
+    </div>
+
+  </div><!-- end resultContent -->
+</div><!-- end container -->
+
+<!-- Floating button di luar container agar benar-benar fixed -->
+<button class="btn-rekomendasi" id="btnRekomendasi" onclick="goToRekomendasi()" style="display:none;">
+  🔍 &nbsp;Rekomendasi Kafe Serupa
+</button>
+
+<script>
+  // State
+  let allReviews = [];
+  let currentFilter = 'semua';
+
+  // ============================================================
+  // Render stars
+  function renderStars(count) {
+    let html = '<div class="stars">';
+    for (let i = 1; i <= 5; i++) {
+      html += `<svg class="star ${i <= count ? '' : 'empty'}" viewBox="0 0 24 24">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>`;
+    }
+    return html + '</div>';
+  }
+
+  // Get initials dari nama
+  function getInitial(name) {
+    if (!name || name === 'Anonim') return '?';
+    return name.charAt(0).toUpperCase();
+  }
+
+  // ============================================================
+  // Render review items
+  function renderReviews(reviews) {
+    const list = document.getElementById('reviewList');
+    if (reviews.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Tidak ada ulasan untuk filter ini.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = reviews.map((r, i) => `
+      <div class="review-item" style="animation-delay: ${i * 0.05}s">
+        <div class="review-top">
+          <div class="reviewer-info">
+            <div>
+              <div class="reviewer-meta">
+                ${renderStars(r.stars)}
+                <span class="review-date">${r.date}</span>
+                ${r.isLocalGuide ? '<span class="badge-guide">🏅 Local Guide</span>' : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="review-text">${r.text}</div>
+      </div>
+    `).join('');
+  }
+
+  // ============================================================
+  // Filter reviews
+  function filterReviews(type, btn) {
+    currentFilter = type;
+
+    // Update tombol aktif
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    let filtered = allReviews;
+    if (type === 'positif') filtered = allReviews.filter(r => r.stars >= 4);
+    else if (type === 'negatif') filtered = allReviews.filter(r => r.stars <= 3);
+    else if (type === 'local_guide') filtered = allReviews.filter(r => r.isLocalGuide);
+
+    renderReviews(filtered);
+  }
+
+  function goBack() {
+    const from = sessionStorage.getItem('resultFrom');
+    if (from === 'recommendations') {
+      window.location.href = '/recommendations.html';
+    } else {
+      window.location.href = '/';
+    }
+  }
+
+  function goToRekomendasi() {
+    sessionStorage.setItem('resultFrom', 'results');
+    window.location.href = 'recommendations.html';
+  }
+
+  // ============================================================
+  // Load data dari sessionStorage (hasil dari /analyze)
+  // ============================================================
+  function loadData() {
+    const raw = sessionStorage.getItem('analyzeResult');
+
+    // Kalau tidak ada data (misal langsung buka results.html),
+    // redirect ke halaman utama
+    if (!raw) {
+      window.location.href = '/';
+      return;
+    }
+
+    const data = JSON.parse(raw);
+
+    // Isi nama kafe
+    document.getElementById('cafeName').textContent = data.cafe_name || 'Kafe';
+
+    // Isi statistik
+    document.getElementById('totalCount').textContent = data.total;
+    document.getElementById('genuineCount').textContent = data.genuine;
+    document.getElementById('genuinePct').textContent = `${Math.round(data.genuine / data.total * 100)}% dari total`;
+    document.getElementById('fakeCount').textContent = data.fake;
+    document.getElementById('fakePct').textContent = `${Math.round(data.fake / data.total * 100)}% dari total`;
+
+    // Tampilkan ulasan
+    // Backend mengirim: stars, text, date, isLocalGuide
+    allReviews = data.reviews.map(r => ({
+      stars:       r.stars,
+      text:        r.text,
+      date:        r.date,
+      isLocalGuide: r.isLocalGuide
+    }));
+
+    renderReviews(allReviews);
+
+    // Sembunyikan loading, tampilkan hasil
+    document.getElementById('loadingCard').style.display = 'none';
+    document.getElementById('resultContent').style.display = 'block';
+    document.getElementById('btnRekomendasi').style.display = 'block';
+  }
+
+  // Jalankan saat halaman dibuka
+  loadData();
+</script>
+
+</body>
+</html>
