@@ -1,3 +1,8 @@
+# ============================================================
+# main.py — Pintu utama FastAPI
+# Semua "jalan" (endpoint) yang bisa diakses web ada di sini
+# ============================================================
+
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,7 +13,7 @@ import uvicorn
 from dotenv import load_dotenv
 load_dotenv()
 
-# Import modul-modul
+# Import modul-modul buatan kita (akan dibuat di langkah berikutnya)
 from modules.data_source.local_data import get_reviews        # ambil data ulasan
 from modules.prediction import predict_reviews                # deteksi fake/genuine
 from modules.recommendation import get_recommendations        # cari kafe serupa
@@ -22,6 +27,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Sambungkan folder static/ agar HTML, CSS, JS bisa diakses
+# Artinya: file di folder static/ bisa dibuka lewat browser
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -40,6 +47,7 @@ class RecommendRequest(BaseModel):
 
 # ============================================================
 # ENDPOINT 1 — Halaman utama
+# Saat user buka http://localhost:8000 → langsung ke index.html
 # ============================================================
 @app.get("/")
 def root():
@@ -56,6 +64,18 @@ def recommendations():
 
 # ============================================================
 # ENDPOINT 2 — Analisis ulasan kafe
+#
+# Cara kerja:
+# 1. Web kirim URL kafe ke sini
+# 2. Kita ambil data ulasan (dari lokal / nanti Apify)
+# 3. Kita prediksi mana yang genuine, mana yang fake
+# 4. Kita kembalikan hasilnya ke web
+#
+# Contoh request dari web (JavaScript):
+#   fetch("/analyze", {
+#     method: "POST",
+#     body: JSON.stringify({ url: "https://maps.google.com/..." })
+#   })
 # ============================================================
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest):
@@ -75,16 +95,23 @@ def analyze(request: AnalyzeRequest):
 
     # Langkah 3: Kembalikan hasil ke web
     return {
-        "cafe_name": result["cafe_name"],
-        "total":     result["total"],
-        "genuine":   result["genuine_count"],
-        "fake":      result["fake_count"],
-        "reviews":   result["genuine_reviews"]   # hanya ulasan genuine yang ditampilkan
+        "cafe_name":    result["cafe_name"],
+        "total":        result["total"],
+        "genuine":      result["genuine_count"],
+        "fake":         result["fake_count"],
+        "reviews":      result["genuine_reviews"],
+        "fake_reviews": result["fake_reviews"],
     }
 
 
 # ============================================================
 # ENDPOINT 3 — Rekomendasi kafe serupa
+#
+# Cara kerja:
+# 1. Web kirim URL kafe yang sedang dilihat
+# 2. Kita cari tag kafe tersebut di dbKafe
+# 3. Kita cari kafe lain dengan tag serupa + paling dekat
+# 4. Kembalikan daftar rekomendasinya
 # ============================================================
 @app.post("/recommend")
 def recommend(request: RecommendRequest):
@@ -104,6 +131,8 @@ def recommend(request: RecommendRequest):
 
 # ============================================================
 # Jalankan server
+# Ketik di terminal: python main.py
+# Lalu buka browser: http://localhost:8000
 # ============================================================
 if __name__ == "__main__":
     uvicorn.run(

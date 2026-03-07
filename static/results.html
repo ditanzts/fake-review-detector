@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hasil Analisis Ulasan</title>
-<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -289,6 +289,11 @@
       border-color: var(--brown-mid);
     }
 
+    .filter-btn-fake.active, .filter-btn-fake:hover {
+      background: var(--red) !important;
+      border-color: var(--red) !important;
+    }
+
     /* Review list */
     .review-list { display: flex; flex-direction: column; gap: 12px; }
 
@@ -498,8 +503,9 @@
 
       <!-- Filter -->
       <div class="filter-bar">
-        <button class="filter-btn active" onclick="filterReviews('semua', this)">Semua</button>
+        <button class="filter-btn active" onclick="filterReviews('semua', this)">Semua Asli</button>
         <button class="filter-btn" onclick="filterReviews('local_guide', this)">🏅 Local Guide</button>
+        <button class="filter-btn filter-btn-fake" onclick="filterReviews('palsu', this)">✗ Ulasan Palsu</button>
       </div>
 
       <div class="review-list" id="reviewList">
@@ -518,6 +524,7 @@
 <script>
   // State
   let allReviews = [];
+  let fakeReviews = [];
   let currentFilter = 'semua';
 
   // ============================================================
@@ -538,9 +545,7 @@
     return name.charAt(0).toUpperCase();
   }
 
-  // ============================================================
-  // Render review items
-  function renderReviews(reviews) {
+  function renderReviews(reviews, isFake = false) {
     const list = document.getElementById('reviewList');
     if (reviews.length === 0) {
       list.innerHTML = `
@@ -551,8 +556,10 @@
       return;
     }
 
+    const borderStyle = isFake ? 'border-color: rgba(192,57,43,0.3); background: #fff9f9;' : '';
+
     list.innerHTML = reviews.map((r, i) => `
-      <div class="review-item" style="animation-delay: ${i * 0.05}s">
+      <div class="review-item" style="animation-delay: ${i * 0.05}s; ${borderStyle}">
         <div class="review-top">
           <div class="reviewer-info">
             <div>
@@ -560,6 +567,7 @@
                 ${renderStars(r.stars)}
                 <span class="review-date">${r.date}</span>
                 ${r.isLocalGuide ? '<span class="badge-guide">🏅 Local Guide</span>' : ''}
+                ${isFake ? '<span style="font-size:10px;background:rgba(192,57,43,0.1);color:#c0392b;border-radius:10px;padding:2px 8px;font-weight:500;">✗ Terdeteksi Palsu</span>' : ''}
               </div>
             </div>
           </div>
@@ -569,21 +577,18 @@
     `).join('');
   }
 
-  // ============================================================
-  // Filter reviews
   function filterReviews(type, btn) {
     currentFilter = type;
-
-    // Update tombol aktif
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    let filtered = allReviews;
-    if (type === 'positif') filtered = allReviews.filter(r => r.stars >= 4);
-    else if (type === 'negatif') filtered = allReviews.filter(r => r.stars <= 3);
-    else if (type === 'local_guide') filtered = allReviews.filter(r => r.isLocalGuide);
-
-    renderReviews(filtered);
+    if (type === 'palsu') {
+      renderReviews(fakeReviews, true);
+    } else if (type === 'local_guide') {
+      renderReviews(allReviews.filter(r => r.isLocalGuide));
+    } else {
+      renderReviews(allReviews);
+    }
   }
 
   function goBack() {
@@ -625,14 +630,8 @@
     document.getElementById('fakeCount').textContent = data.fake;
     document.getElementById('fakePct').textContent = `${Math.round(data.fake / data.total * 100)}% dari total`;
 
-    // Tampilkan ulasan
-    // Backend mengirim: stars, text, date, isLocalGuide
-    allReviews = data.reviews.map(r => ({
-      stars:       r.stars,
-      text:        r.text,
-      date:        r.date,
-      isLocalGuide: r.isLocalGuide
-    }));
+    allReviews  = data.reviews  || [];
+    fakeReviews = data.fake_reviews || [];
 
     renderReviews(allReviews);
 
