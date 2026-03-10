@@ -1,8 +1,3 @@
-# ============================================================
-# main.py — Pintu utama FastAPI
-# Semua "jalan" (endpoint) yang bisa diakses web ada di sini
-# ============================================================
-
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -15,9 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import modul-modul buatan kita (akan dibuat di langkah berikutnya)
-from modules.data_source.local_data import get_reviews        # ambil data ulasan
-from modules.prediction import predict_reviews                # deteksi fake/genuine
-from modules.recommendation import get_recommendations, DB_KAFE  # cari kafe serupa
+from modules.data_source.local_data import get_reviews        
+from modules.prediction import predict_reviews                
+from modules.recommendation import get_recommendations, DB_KAFE  
 
 # ============================================================
 # Inisialisasi aplikasi FastAPI
@@ -28,13 +23,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Sambungkan folder static/ agar HTML, CSS, JS bisa diakses
-# Artinya: file di folder static/ bisa dibuka lewat browser
+# Sambungkan folder static/
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # ============================================================
-# Model data — bentuk data yang dikirim dari web ke backend
+# Model data
 # ============================================================
 
 class AnalyzeRequest(BaseModel):
@@ -48,7 +42,6 @@ class RecommendRequest(BaseModel):
 
 # ============================================================
 # ENDPOINT 1 — Halaman utama
-# Saat user buka http://localhost:8000 → langsung ke index.html
 # ============================================================
 @app.get("/")
 def root():
@@ -64,8 +57,7 @@ def recommendations():
 
 
 # ============================================================
-# ENDPOINT BARU — Cek mode (Apify atau Lokal)
-# Dipakai index.html untuk memutuskan tampilan mana yang muncul
+# Cek mode (Apify atau Lokal)
 # ============================================================
 @app.get("/mode")
 def get_mode():
@@ -74,8 +66,8 @@ def get_mode():
 
 
 # ============================================================
-# ENDPOINT BARU — Daftar semua kafe di database
-# Dipakai popup pilih kafe di index.html (mode lokal)
+# Daftar semua kafe di database
+# Popup pilih kafe (mode lokal)
 # ============================================================
 @app.get("/cafes")
 def get_cafes():
@@ -97,18 +89,6 @@ def get_cafes():
 
 # ============================================================
 # ENDPOINT 2 — Analisis ulasan kafe
-#
-# Cara kerja:
-# 1. Web kirim URL kafe ke sini
-# 2. Kita ambil data ulasan (dari lokal / nanti Apify)
-# 3. Kita prediksi mana yang genuine, mana yang fake
-# 4. Kita kembalikan hasilnya ke web
-#
-# Contoh request dari web (JavaScript):
-#   fetch("/analyze", {
-#     method: "POST",
-#     body: JSON.stringify({ url: "https://maps.google.com/..." })
-#   })
 # ============================================================
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest):
@@ -139,12 +119,6 @@ def analyze(request: AnalyzeRequest):
 
 # ============================================================
 # ENDPOINT 3 — Rekomendasi kafe serupa
-#
-# Cara kerja:
-# 1. Web kirim URL kafe yang sedang dilihat
-# 2. Kita cari tag kafe tersebut di dbKafe
-# 3. Kita cari kafe lain dengan tag serupa + paling dekat
-# 4. Kembalikan daftar rekomendasinya
 # ============================================================
 @app.post("/recommend")
 def recommend(request: RecommendRequest):
@@ -164,8 +138,6 @@ def recommend(request: RecommendRequest):
 
 # ============================================================
 # Jalankan server
-# Ketik di terminal: python main.py
-# Lalu buka browser: http://localhost:8000
 # ============================================================
 if __name__ == "__main__":
     uvicorn.run(
