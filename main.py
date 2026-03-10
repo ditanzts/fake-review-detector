@@ -3,6 +3,7 @@
 # Semua "jalan" (endpoint) yang bisa diakses web ada di sini
 # ============================================================
 
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -16,7 +17,7 @@ load_dotenv()
 # Import modul-modul buatan kita (akan dibuat di langkah berikutnya)
 from modules.data_source.local_data import get_reviews        # ambil data ulasan
 from modules.prediction import predict_reviews                # deteksi fake/genuine
-from modules.recommendation import get_recommendations        # cari kafe serupa
+from modules.recommendation import get_recommendations, DB_KAFE  # cari kafe serupa
 
 # ============================================================
 # Inisialisasi aplikasi FastAPI
@@ -60,6 +61,38 @@ def results():
 @app.get("/recommendations.html")
 def recommendations():
     return FileResponse("static/recommendations.html")
+
+
+# ============================================================
+# ENDPOINT BARU — Cek mode (Apify atau Lokal)
+# Dipakai index.html untuk memutuskan tampilan mana yang muncul
+# ============================================================
+@app.get("/mode")
+def get_mode():
+    use_apify = os.getenv("USE_APIFY", "false").lower() == "true"
+    return {"mode": "apify" if use_apify else "local"}
+
+
+# ============================================================
+# ENDPOINT BARU — Daftar semua kafe di database
+# Dipakai popup pilih kafe di index.html (mode lokal)
+# ============================================================
+@app.get("/cafes")
+def get_cafes():
+    if DB_KAFE is None or DB_KAFE.empty:
+        raise HTTPException(status_code=500, detail="Database kafe tidak tersedia")
+
+    cafes = []
+    for _, row in DB_KAFE.iterrows():
+        cafes.append({
+            "name":   row["name"],
+            "url":    row["url"],
+            "labels": row["labels"] if isinstance(row["labels"], list) else [],
+        })
+
+    # Urutkan alfabetis
+    cafes.sort(key=lambda x: x["name"].lower())
+    return {"cafes": cafes}
 
 
 # ============================================================

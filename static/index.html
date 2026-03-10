@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Deteksi Ulasan Kafe Jember</title>
-<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -301,12 +301,151 @@
       font-weight: 400;
     }
 
+    /* ── CAFE LIST BUTTON ── */
+    .btn-list {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      background: transparent;
+      color: var(--brown-mid);
+      border: 1.5px dashed rgba(196,149,106,0.6);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-list:hover {
+      background: rgba(196,149,106,0.08);
+      border-color: var(--brown-light);
+    }
+    .btn-list svg {
+      width: 16px; height: 16px;
+      stroke: var(--brown-light); fill: none; stroke-width: 2;
+    }
+
+    /* ── POPUP OVERLAY ── */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(44,24,16,0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .popup-overlay.show { display: flex; }
+
+    .popup-box {
+      background: var(--white);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 64px rgba(44,24,16,0.25);
+      animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both;
+      margin: 16px;
+    }
+
+    .popup-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid rgba(196,149,106,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .popup-title {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      color: var(--brown-dark);
+      font-weight: 700;
+    }
+
+    .popup-close {
+      width: 32px; height: 32px;
+      border: none; background: var(--cream);
+      border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .popup-close:hover { background: rgba(196,149,106,0.2); }
+    .popup-close svg {
+      width: 16px; height: 16px;
+      stroke: var(--brown-mid); fill: none; stroke-width: 2;
+    }
+
+    .popup-search {
+      padding: 12px 24px;
+      flex-shrink: 0;
+    }
+
+    .popup-search input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid rgba(196,149,106,0.3);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: var(--cream);
+      color: var(--brown-dark);
+      outline: none;
+    }
+    .popup-search input:focus {
+      border-color: var(--brown-light);
+      background: var(--white);
+    }
+
+    .popup-list {
+      overflow-y: auto;
+      padding: 8px 16px 16px;
+      flex: 1;
+    }
+
+    .cafe-item {
+      padding: 12px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(196,149,106,0.1);
+    }
+    .cafe-item:last-child { border-bottom: none; }
+    .cafe-item:hover { background: var(--cream); }
+
+    .cafe-item-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--brown-dark);
+    }
+    .cafe-item-tags {
+      font-size: 11px;
+      color: var(--brown-light);
+      margin-top: 3px;
+    }
+
     .badge svg {
       width: 12px;
       height: 12px;
       stroke: var(--green);
       fill: none;
       stroke-width: 2.5;
+      flex-shrink: 0;
+    }
+
+    .popup-loading {
+      padding: 40px;
+      text-align: center;
+      color: var(--brown-light);
+      font-size: 13px;
     }
   </style>
 </head>
@@ -338,7 +477,7 @@
     <div class="divider"></div>
 
     <!-- Form -->
-    <div class="form-group">
+    <div class="form-group" id="urlGroup">
       <label class="form-label" for="cafeUrl">URL Google Maps Kafe</label>
       <div class="input-wrapper">
         <input
@@ -364,6 +503,12 @@
       <span class="btn-spinner"></span>
     </button>
 
+    <!-- Tombol pilih dari daftar (hanya muncul di mode lokal) -->
+    <button class="btn-list" id="btnList" onclick="openPopup()" style="display:none;">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Atau pilih dari daftar kafe
+    </button>
+
     <!-- Badges -->
     <div class="badges">
       <span class="badge">
@@ -381,6 +526,24 @@
     </div>
   </div>
 
+<!-- Popup daftar kafe -->
+<div class="popup-overlay" id="popupOverlay" onclick="closePopupOutside(event)">
+  <div class="popup-box">
+    <div class="popup-header">
+      <div class="popup-title">☕ Pilih Kafe</div>
+      <button class="popup-close" onclick="closePopup()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="popup-search">
+      <input type="text" id="searchKafe" placeholder="Cari nama kafe..." oninput="filterKafe(this.value)" autocomplete="off"/>
+    </div>
+    <div class="popup-list" id="popupList">
+      <div class="popup-loading">Memuat daftar kafe...</div>
+    </div>
+  </div>
+</div>
+
   <script>
     function isValidGoogleMapsUrl(url) {
       return url.includes('google.com/maps') || 
@@ -388,6 +551,123 @@
              url.includes('goo.gl/maps') ||
              url.includes('maps.app.goo.gl');
     }
+
+    // ── Cek mode saat halaman dibuka ──────────────────────────
+    let allCafes = [];
+
+    async function initMode() {
+      try {
+        const res = await fetch('/mode');
+        const { mode } = await res.json();
+        if (mode === 'local') {
+          // Sembunyikan input URL, tampilkan tombol list
+          document.getElementById('urlGroup').style.display = 'none';
+          document.getElementById('btnSubmit').style.display = 'none';
+          document.getElementById('btnList').style.display = 'flex';
+          loadCafes();
+        }
+        // mode === 'apify' → tampilan default (input URL)
+      } catch (e) {
+        console.warn('Gagal cek mode:', e);
+      }
+    }
+
+    async function loadCafes() {
+      try {
+        const res  = await fetch('/cafes');
+        const data = await res.json();
+        allCafes = data.cafes;
+      } catch (e) {
+        console.warn('Gagal load cafes:', e);
+      }
+    }
+
+    // ── Popup ──────────────────────────────────────────────────
+    function openPopup() {
+      document.getElementById('popupOverlay').classList.add('show');
+      document.getElementById('searchKafe').value = '';
+      renderKafe(allCafes);
+      setTimeout(() => document.getElementById('searchKafe').focus(), 100);
+    }
+
+    function closePopup() {
+      document.getElementById('popupOverlay').classList.remove('show');
+    }
+
+    function closePopupOutside(e) {
+      if (e.target === document.getElementById('popupOverlay')) closePopup();
+    }
+
+    function filterKafe(query) {
+      const q = query.toLowerCase();
+      const filtered = allCafes.filter(c => c.name.toLowerCase().includes(q));
+      renderKafe(filtered);
+    }
+
+    function renderKafe(list) {
+      const el = document.getElementById('popupList');
+      if (!list.length) {
+        el.innerHTML = '<div class="popup-loading">Kafe tidak ditemukan.</div>';
+        return;
+      }
+      el.innerHTML = list.map(c => `
+        <div class="cafe-item" onclick="pilihKafe('${c.url.replace(/'/g,"\\'")}', '${c.name.replace(/'/g,"\\'")}')">
+          <div class="cafe-item-name">${c.name}</div>
+          <div class="cafe-item-tags">${c.labels.join(' · ') || ''}</div>
+        </div>
+      `).join('');
+    }
+
+    async function pilihKafe(url, name) {
+      closePopup();
+
+      const btn = document.getElementById('btnList');
+      btn.disabled = true;
+      btn.innerHTML = `<span style="opacity:0.6">Menganalisis ${name}...</span>`;
+
+      try {
+        const response = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Terjadi kesalahan pada server');
+        }
+
+        const data = await response.json();
+        sessionStorage.setItem('cafeUrl', url);
+        sessionStorage.setItem('analyzeResult', JSON.stringify(data));
+        sessionStorage.setItem('resultFrom', 'index');
+        window.location.href = '/results.html';
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg> Atau pilih dari daftar kafe`;
+        const errorMsg = document.getElementById('errorMsg');
+        errorMsg.textContent = `⚠ ${err.message}`;
+        errorMsg.classList.add('show');
+      }
+    }
+
+    // Tutup popup dengan Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closePopup();
+    });
+
+    // Reset tombol list saat kembali ke halaman ini
+    window.addEventListener('pageshow', () => {
+      const btn = document.getElementById('btnList');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--brown-light);fill:none;stroke-width:2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Atau pilih dari daftar kafe`;
+      }
+    });
+
+    // Jalankan cek mode saat halaman dibuka
+    initMode();
 
     async function handleSubmit() {
       const input = document.getElementById('cafeUrl');
@@ -448,7 +728,7 @@
       }
     }
 
-    // Tekan Enter yg bisa submit
+    // Tekan Enter juga bisa submit
     document.getElementById('cafeUrl').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') handleSubmit();
     });
