@@ -33,16 +33,17 @@ DB_PERILAKU_PATH = os.path.join("data", "dbPerilaku.csv")
 def _load_model(path: str, nama: str):
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {nama} tidak ditemukan: {path}")
+    # Pipeline baru menyimpan model dengan pickle — coba pickle dulu
     try:
-        import joblib
-        model = joblib.load(path)
-        print(f"[INFO] {nama} berhasil dimuat (joblib)")
-        return model
-    except Exception:
-        # fallback ke pickle kalau joblib gagal
         with open(path, "rb") as f:
             model = pickle.load(f)
         print(f"[INFO] {nama} berhasil dimuat (pickle)")
+        return model
+    except Exception:
+        # Fallback ke joblib untuk model lama
+        import joblib
+        model = joblib.load(path)
+        print(f"[INFO] {nama} berhasil dimuat (joblib fallback)")
         return model
 
 
@@ -104,16 +105,17 @@ def predict_reviews(raw_reviews: list[dict]) -> dict:
     # ── Langkah 2: Prediksi Level-0 ──────────────────────────
     print("[INFO] Menjalankan prediksi Level-0...")
 
-    # XGBoost Level-0 → probabilitas dari fitur numerik
-    prob_xgb = MODEL_XGB.predict_proba(df_features)[:, 1]
+    # SVM Level-0 → transform teks pakai TF-IDF, baru predict
+    X_tfidf  = TFIDF.transform(texts)
+    prob_svm = MODEL_SVM.predict_proba(X_tfidf)[:, 1]   # [:, 1] = prob FAKE
 
-    # SVM Level-0 → transform teks dulu pakai TF-IDF, baru predict
-    X_tfidf  = TFIDF.transform(texts)        # list teks → sparse matrix
-    prob_svm = MODEL_SVM.predict_proba(X_tfidf)[:, 1]
+    # XGBoost Level-0 → probabilitas dari 14 fitur heuristik
+    prob_xgb = MODEL_XGB.predict_proba(df_features)[:, 1]  # [:, 1] = prob FAKE
 
     # ── Langkah 3: Gabungkan output Level-0 → input Meta ─────
-    # Stack jadi matrix [prob_xgb, prob_svm] per ulasan
-    meta_input = np.column_stack([prob_xgb, prob_svm])
+    # Urutan HARUS [svm_proba, xgb_proba] — sama dengan X_meta_train di Colab
+    # (Step 5.5: X_meta_train = np.column_stack([svm_oof_proba, xgb_oof_proba]))
+    meta_input = np.column_stack([prob_svm, prob_xgb])
 
     # ── Langkah 4: Prediksi akhir oleh Meta Level-1 ───────────
     print("[INFO] Menjalankan prediksi Meta Level-1...")

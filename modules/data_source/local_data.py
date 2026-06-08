@@ -1,8 +1,3 @@
-# ============================================================
-# modules/data_source/local_data.py
-# Modul untuk mengambil data ulasan dari data lokal.
-# ============================================================
-
 import pandas as pd
 from datetime import datetime, timedelta
 import os
@@ -90,9 +85,7 @@ def _get_reviews_local(cafe_url: str) -> list[dict]:
     return reviews
 
 
-# ============================================================
 # Fungsi-fungsi pembantu (private, hanya dipakai di file ini)
-# ============================================================
 
 def _get_place_id_from_db(url: str) -> str | None:
     """
