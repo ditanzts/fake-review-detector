@@ -1,20 +1,12 @@
-# modules/data_source/apify_scraper.py
-# Modul scraping realtime menggunakan Apify API.
-
 import os
 import time
 import requests
 from datetime import datetime, timezone
 
-# ── Konfigurasi ──
 APIFY_TOKEN = os.getenv("APIFY_TOKEN", "")
 ACTOR_ID    = "compass~google-maps-reviews-scraper"
 BASE_URL    = "https://api.apify.com/v2"
-
-# Maksimal ulasan yang diambil per kafe (limit kredit Apify)
 MAX_REVIEWS = 150
-
-# Timeout menunggu hasil scraping (detik)
 TIMEOUT_SECONDS = 180
 
 
@@ -38,32 +30,29 @@ def get_reviews_realtime(cafe_url: str) -> list[dict]:
 
     print(f"[Apify] Memulai scraping untuk: {cafe_url}")
 
-    # ── Langkah 1: menjalankan actor ──
+    # menjalankan actor
     run_id = _start_actor(cafe_url)
     if not run_id:
         raise RuntimeError("Gagal menjalankan Apify Actor")
 
     print(f"[Apify] Actor berjalan, run_id: {run_id}")
 
-    # ── Langkah 2: tunggu ──
+    # tunggu
     success = _wait_for_completion(run_id)
     if not success:
         raise RuntimeError("Apify Actor timeout atau gagal")
 
-    # ── Langkah 3: ambil hasil ──
+    # ambil hasil
     raw_items = _fetch_results(run_id)
     print(f"[Apify] Berhasil mengambil {len(raw_items)} ulasan mentah")
 
-    # ── Langkah 4: transformasi ke format sistem ──
+    # transformasi ke format sistem
     reviews = _transform(raw_items, cafe_url)
     print(f"[Apify] {len(reviews)} ulasan siap diproses")
 
     return reviews
 
-
-# ============================================================
-# Fungsi pembantu
-# ============================================================
+# fungsi pembantu
 
 def _start_actor(cafe_url: str) -> str | None:
     """Jalankan Apify Actor dan kembalikan run_id"""
@@ -143,13 +132,13 @@ def _fetch_results(run_id: str) -> list[dict]:
 
 def _transform(items: list[dict], cafe_url: str) -> list[dict]:
     """
-    Ubah format Apify → format sistem kita.
+    Ubah format Apify → format sistem
 
     Nama kolom Apify  →  Nama kolom sistem
     ─────────────────────────────────────
     reviewerId         →  reviewerId
     text               →  text
-    stars              →  rate          ← BEDA NAMA!
+    stars              →  rate          ← beda nama
     publishedAtDate    →  publishedAtDate
     isLocalGuide       →  isLocalGuide
     placeId            →  placeId
@@ -160,19 +149,19 @@ def _transform(items: list[dict], cafe_url: str) -> list[dict]:
 
     results = []
     for item in items:
-        # Skip kalau tidak ada teks
+        # skip kalau tidak ada teks
         text = item.get("text", "")
         if not text or not str(text).strip():
             continue
 
-        # Filter 2 tahun terakhir
+        # filter 2 tahun terakhir
         try:
             date_str = item.get("publishedAtDate", "")
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
             if dt < two_years_ago:
                 continue
         except Exception:
-            pass  # kalau tanggal tidak valid, tetap include
+            pass  # kalau tgl tidak valid, tetap include
 
         results.append({
             "reviewerId":      str(item.get("reviewerId", "anonymous")),

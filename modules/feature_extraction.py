@@ -2,8 +2,7 @@ import re
 import numpy  as np
 import pandas as pd
 
-# ── Kata promotional / spam (f07) ────────────────────────────
-# Persis sama dengan PROMO_KEYWORDS di Step 2.5 full_pipeline_code.txt
+# kata promotional / spam (f07) 
 PROMO_KEYWORDS = {
     'rekomendasi', 'rekomen', 'terbaik', 'mantap', 'keren', 'hits',
     'viral', 'instagramable', 'aesthetic', 'wajib', 'harus', 'pasti',
@@ -11,8 +10,7 @@ PROMO_KEYWORDS = {
     'enak banget', 'ramah banget', 'bersih banget',
 }
 
-# ── Kata konjungsi (f08) — ID + EN ───────────────────────────
-# Persis sama dengan CONJUNCTION_WORDS di Step 2.5
+# kata konjungsi (f08) 
 CONJUNCTION_WORDS = {
     'dan', 'atau', 'tetapi', 'tapi', 'namun', 'melainkan', 'sedangkan',
     'karena', 'sebab', 'sehingga', 'supaya', 'agar', 'meskipun', 'walaupun',
@@ -23,7 +21,7 @@ CONJUNCTION_WORDS = {
     'unless', 'until', 'that', 'which', 'then', 'also', 'moreover',
 }
 
-# ── Emoji pattern ─────────────────────────────────────────────
+# emoji pattern 
 _EMOJI_PATTERN = re.compile(
     "[\U00010000-\U0010ffff"
     "\U0001F600-\U0001F64F"
@@ -36,9 +34,7 @@ _EMOJI_PATTERN = re.compile(
 )
 
 
-# ============================================================
 # FITUR TEKSTUAL  F01–F09  (per ulasan)
-# ============================================================
 
 def extract_text_features(text: str):
     """
@@ -84,9 +80,7 @@ def extract_text_features(text: str):
     return f01, f02, f03, f04, f05, f06, f07, f08, f09
 
 
-# ============================================================
 # FITUR PERILAKU  F10–F14  (lookup reviewerId di dbPerilaku)
-# ============================================================
 
 def compute_behavioral_features(reviewer_id: str,
                                   db_perilaku: pd.DataFrame,
@@ -155,9 +149,7 @@ def compute_behavioral_features(reviewer_id: str,
     }
 
 
-# ============================================================
 # FUNGSI UTAMA — Ekstraksi semua 14 fitur untuk satu ulasan
-# ============================================================
 
 def extract_features(review: dict, db_perilaku: pd.DataFrame) -> dict:
     """
@@ -204,9 +196,7 @@ def extract_features(review: dict, db_perilaku: pd.DataFrame) -> dict:
     }
 
 
-# ============================================================
-# Urutan kolom — HARUS SAMA dengan FEATURE_COLS saat training
-# ============================================================
+# urutan kolom 
 FEATURE_COLUMNS = [
     'f01_punctuationDensity',
     'f02_uppercaseRatio',

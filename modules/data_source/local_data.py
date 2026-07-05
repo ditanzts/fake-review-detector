@@ -2,10 +2,10 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 
-# Lokasi file CSV ulasan
+# lokasi file CSV ulasan
 CSV_PATH = os.path.join("data", "dsUlasan.csv")
 
-# Kolom yang ada di CSV
+# kolom yang ada di CSV
 REQUIRED_COLUMNS = {"reviewerId", "text", "rate", "publishedAtDate", "isLocalGuide", "placeId"}
 
 
@@ -41,7 +41,7 @@ def _get_reviews_local(cafe_url: str) -> list[dict]:
         list of dict — setiap dict adalah satu ulasan mentah
     """
 
-    # ── Langkah 1: baca file CSV ──
+    # baca file CSV
     if not os.path.exists(CSV_PATH):
         print(f"[ERROR] File CSV tidak ditemukan: {CSV_PATH}")
         return []
@@ -52,13 +52,13 @@ def _get_reviews_local(cafe_url: str) -> list[dict]:
         print(f"[ERROR] Gagal membaca CSV: {e}")
         return []
 
-    # ── Langkah 2: validasi kolom ──
+    # validasi kolom
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
         print(f"[ERROR] Kolom berikut tidak ditemukan di CSV: {missing}")
         return []
 
-    # ── Langkah 3: cari placeId via dbKafe ──
+    # cari placeId via dbKafe
     place_id = _get_place_id_from_db(cafe_url)
 
     if place_id:
@@ -70,14 +70,14 @@ def _get_reviews_local(cafe_url: str) -> list[dict]:
         print(f"[WARNING] URL tidak ditemukan di dbKafe: {cafe_url}")
         return []
 
-    # ── Langkah 4: filter ulasan 2 tahun terakhir ──
+    # filter ulasan 2 tahun terakhir
     df_filtered = _filter_two_years(df_filtered.copy())
 
     if df_filtered.empty:
         print("[INFO] Tidak ada ulasan dalam 2 tahun terakhir")
         return []
 
-    # ── Langkah 5: bersihkan data ──
+    # bersihkan data
     df_filtered = _clean_data(df_filtered)
 
     reviews = df_filtered.to_dict(orient="records")
@@ -85,7 +85,7 @@ def _get_reviews_local(cafe_url: str) -> list[dict]:
     return reviews
 
 
-# Fungsi-fungsi pembantu (private, hanya dipakai di file ini)
+# fungsi pembantu 
 
 def _get_place_id_from_db(url: str) -> str | None:
     """

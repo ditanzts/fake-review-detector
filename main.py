@@ -5,28 +5,28 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
 
-# Load file .env agar USE_APIFY dan APIFY_TOKEN terbaca
+# load file .env 
 from dotenv import load_dotenv
 load_dotenv()
 
-# Import modul-modul buatan kita (akan dibuat di langkah berikutnya)
+# lmport modul-modul 
 from modules.data_source.local_data import get_reviews        
 from modules.prediction import predict_reviews                
 from modules.recommendation import get_recommendations, DB_KAFE  
 
 
-# Inisialisasi aplikasi FastAPI
+# inisialisasi aplikasi FastAPI
 app = FastAPI(
     title="Deteksi Ulasan Kafe Jember",
     description="API untuk deteksi fake review dan rekomendasi kafe",
     version="1.0.0"
 )
 
-# Sambungkan folder static/
+# sambungkan folder static/
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# Model data
+# model data
 class AnalyzeRequest(BaseModel):
     """Data yang dikirim saat user input URL kafe"""
     url: str                  # URL Google Maps kafe
@@ -36,7 +36,7 @@ class RecommendRequest(BaseModel):
     cafe_url: str             # URL kafe yang sedang dilihat
 
 
-# Halaman utama
+# halaman utama
 @app.get("/")
 def root():
     return FileResponse("static/index.html")
@@ -50,14 +50,14 @@ def recommendations():
     return FileResponse("static/recommendations.html")
 
 
-# Cek mode (Apify atau Lokal)
+# cek mode apify/lokal
 @app.get("/mode")
 def get_mode():
     use_apify = os.getenv("USE_APIFY", "false").lower() == "true"
     return {"mode": "apify" if use_apify else "local"}
 
 
-# Popup pilih kafe (mode lokal)
+# popup pilih kafe (mode lokal)
 @app.get("/cafes")
 def get_cafes():
     if DB_KAFE is None or DB_KAFE.empty:
@@ -71,29 +71,29 @@ def get_cafes():
             "labels": row["labels"] if isinstance(row["labels"], list) else [],
         })
 
-    # Urutkan alfabetis
+    # urutkan alfabetis
     cafes.sort(key=lambda x: x["name"].lower())
     return {"cafes": cafes}
 
 
-# Analisis ulasan kafe
+# analisis ulasan kafe
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest):
 
-    # Validasi URL tidak boleh kosong
+    # validasi URL tidak boleh kosong
     if not request.url.strip():
         raise HTTPException(status_code=400, detail="URL tidak boleh kosong")
 
-    # Langkah 1: Ambil data ulasan mentah
+    # ambil data ulasan mentah
     raw_reviews = get_reviews(request.url)
 
     if not raw_reviews:
         raise HTTPException(status_code=404, detail="Ulasan tidak ditemukan untuk kafe ini")
 
-    # Langkah 2: Prediksi genuine vs fake
+    # prediksi genuine vs fake
     result = predict_reviews(raw_reviews)
 
-    # Langkah 3: Kembalikan hasil ke web
+    # kembalikan hasil ke web
     return {
         "cafe_name":    result["cafe_name"],
         "total":        result["total"],
@@ -104,7 +104,7 @@ def analyze(request: AnalyzeRequest):
     }
 
 
-# Rekomendasi kafe serupa
+# rekomendasi kafe serupa
 @app.post("/recommend")
 def recommend(request: RecommendRequest):
 

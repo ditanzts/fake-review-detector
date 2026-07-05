@@ -1,15 +1,3 @@
-# ============================================================
-# modules/prediction.py
-#
-# Load 3 model .pkl (Hybrid Stacking Ensemble) dan prediksi
-# ulasan fake vs genuine.
-#
-# Arsitektur:
-#   Level 0 → SVM (TF-IDF)  : prediksi dari teks mentah
-#   Level 0 → XGBoost       : prediksi dari 17 fitur numerik
-#   Level 1 → XGBoost Meta  : gabungkan output level 0 → hasil akhir
-# ============================================================
-
 import os
 import pickle
 import pandas as pd
@@ -26,21 +14,19 @@ TFIDF_PATH       = os.path.join("models", "tfidf_vectorizer.pkl")  # ← ganti n
 DB_PERILAKU_PATH = os.path.join("data", "dbPerilaku.csv")
 
 
-# ============================================================
-# Load semua model & dbPerilaku saat aplikasi pertama jalan
-# ============================================================
+# load semua model & dbPerilaku saat aplikasi pertama jalan
 
 def _load_model(path: str, nama: str):
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {nama} tidak ditemukan: {path}")
-    # Pipeline baru menyimpan model dengan pickle — coba pickle dulu
+    # pipeline baru menyimpan model dengan pickle 
     try:
         with open(path, "rb") as f:
             model = pickle.load(f)
         print(f"[INFO] {nama} berhasil dimuat (pickle)")
         return model
     except Exception:
-        # Fallback ke joblib untuk model lama
+        # fallback ke joblib untuk model lama
         import joblib
         model = joblib.load(path)
         print(f"[INFO] {nama} berhasil dimuat (joblib fallback)")
@@ -68,9 +54,7 @@ except FileNotFoundError as e:
     MODELS_READY = False
 
 
-# ============================================================
 # FUNGSI UTAMA
-# ============================================================
 
 def predict_reviews(raw_reviews: list[dict]) -> dict:
     """
@@ -89,7 +73,7 @@ def predict_reviews(raw_reviews: list[dict]) -> dict:
         print("[WARNING] Model belum dimuat, pakai mode dummy")
         return _dummy_result(raw_reviews)
 
-    # ── Langkah 1: Ekstrak 17 fitur numerik (untuk XGBoost) ──
+    # ekstrak fitur numerik (untuk XGBoost) ──
     print(f"[INFO] Mengekstrak fitur untuk {len(raw_reviews)} ulasan...")
     features_list = []
     texts = []
@@ -102,7 +86,7 @@ def predict_reviews(raw_reviews: list[dict]) -> dict:
     df_features = pd.DataFrame(features_list, columns=FEATURE_COLUMNS)
     df_features = df_features.fillna(0)
 
-    # ── Langkah 2: Prediksi Level-0 ──────────────────────────
+    # prediksi Level-0 
     print("[INFO] Menjalankan prediksi Level-0...")
 
     # SVM Level-0 → transform teks pakai TF-IDF, baru predict
@@ -112,17 +96,15 @@ def predict_reviews(raw_reviews: list[dict]) -> dict:
     # XGBoost Level-0 → probabilitas dari 14 fitur heuristik
     prob_xgb = MODEL_XGB.predict_proba(df_features)[:, 1]  # [:, 1] = prob FAKE
 
-    # ── Langkah 3: Gabungkan output Level-0 → input Meta ─────
-    # Urutan HARUS [svm_proba, xgb_proba] — sama dengan X_meta_train di Colab
-    # (Step 5.5: X_meta_train = np.column_stack([svm_oof_proba, xgb_oof_proba]))
+    # gabungkan output Level-0 → input Meta 
     meta_input = np.column_stack([prob_svm, prob_xgb])
 
-    # ── Langkah 4: Prediksi akhir oleh Meta Level-1 ───────────
+    # prediksi akhir oleh Meta Level-1
     print("[INFO] Menjalankan prediksi Meta Level-1...")
     predictions = MODEL_META.predict(meta_input)
     # predictions: array 0 (fake) atau 1 (genuine)
 
-    # ── Langkah 5: Pisahkan hasil ─────────────────────────────
+    # pisahkan hasil 
     genuine_reviews = []
     fake_reviews    = []
     for review, pred in zip(raw_reviews, predictions):
@@ -146,9 +128,7 @@ def predict_reviews(raw_reviews: list[dict]) -> dict:
     }
 
 
-# ============================================================
 # Fungsi pembantu
-# ============================================================
 
 def _format_review(review: dict) -> dict:
     return {
